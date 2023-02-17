@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Mirrored from digitonaut.com/art/web_grid/ by HTTrack Website Copier/3.x [XR&CO'2014], Thu, 16 Feb 2023 12:58:21 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=UTF-8" /><!-- /Added by HTTrack -->
+<head>
+<meta charset='utf-8'\>
+<meta name='apple-mobile-web-app-capable' content='yes'><meta name='apple-mobile-web-app-status-bar-style' content='black-translucent'><title>Web Grid</title>
+
+<link type="text/css" rel="stylesheet" href="main.css">
+</head>
+<body>
+
+<script id="vs" type="not-js">
+void main()	{
+  gl_Position = vec4( position, 1.0 );
+}
+</script>
+<script id="fs" type="not-js">
+precision mediump float;
+
+// -------------------------------------------- code from https://glslsandbox.com/ ------------------
+/*
+ * Original shader from: https://www.shadertoy.com/view/NsBXRd
+ */
+
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+// glslsandbox uniforms
+uniform float time;
+uniform vec2 resolution;
+
+// shadertoy emulation
+#define iTime time
+#define iResolution resolution
+
+// --------[ Original ShaderToy begins here ]---------- //
+#define MAX_STEPS 100
+#define MAX_DIST 1000.0
+#define MIN_DIST 0.01
+
+// 2D matrix rotation
+vec2 rot(vec2 p, float a) {
+	return (p * mat2(cos(a), -sin(a), sin(a), cos(a)));
+}
+
+// Hexagon SDF by iq
+float Hexagon(vec2 p, float r) {
+	const vec3 k = vec3(-0.866025404,0.5,0.577350269);
+	p = abs(p);
+	p -= 2.0*min(dot(k.xy,p),0.0)*k.xy;
+	p -= vec2(clamp(p.x, -k.z*r, k.z*r), r);
+	return length(p)*sign(p.y);
+}
+
+// SDFs of the objects in the scene
+float Dist(vec3 point) {
+	// Strand 1
+	vec2 sqp1 = mod(abs(point.xz), 20.0)-vec2(10, 10);
+	sqp1 = rot(sqp1, point.y/2.0) + 0.3;
+	float c1 = Hexagon(sqp1, 1.0);
+	// Strand 2
+	vec2 sqp2 = mod(abs(point.yz+10.0), 20.0)-vec2(10, 10);
+	sqp2 = rot(sqp2, point.x/4.0) + 0.3;
+	float c2 = Hexagon(sqp2, 1.0);
+	// Strand 3
+	vec2 sqp3 = mod(abs(point.xy+vec2(10,0)), 20.0)-vec2(10, 10);
+	sqp3 = rot(sqp3, point.z/4.0) + 0.3;
+	float c3 = Hexagon(sqp3, 1.0);
+	return min(min(c1,c2),c3);
+}
+
+vec2 RayMarch (vec3 cameraOrigin, vec3 rayDirection) {
+	float minDist = 0.0;
+	int steps = 0;
+	for (int i = 0; i < MAX_STEPS; ++i) {
+		vec3 point = cameraOrigin + rayDirection * minDist;
+		float dist = Dist(point);
+		minDist += dist;
+		if (dist < MIN_DIST || abs(minDist) > MAX_DIST) {
+			break;
+		}
+		steps++;
+	}
+	return vec2(minDist, steps);
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
+    vec2 uv = fragCoord/(iResolution.y);
+	uv -= vec2(iResolution.x/iResolution.y/2.0, 0.5);
+	vec3 cameraPosition = vec3(0, 5.0, 0);
+	cameraPosition.xy = rot(cameraPosition.xy, 0.0);
+	cameraPosition.z += iTime*10.0;
+	cameraPosition.x += iTime*4.0;
+	cameraPosition.y += 10.0;
+	vec3 ray = normalize(vec3(uv.x,uv.y, 0.5));
+	ray.xz = rot(ray.xz, iTime/5.0);
+	ray.xy = rot(ray.xy, -iTime/5.0);
+	vec2 march = RayMarch(cameraPosition, ray);
+	vec3 rayPoint = cameraPosition + march.x * ray;
+	vec3 col = mix(vec3(0), mix(vec3(0.9, 0.5, 0.6), vec3(0.5, 0.5, 1.0), sin(iTime/10.0)*0.5+0.5),march.y/50.0);
+	//vec3 col = mix(vec3(0), mix(vec3(0.9, 0.5, 0.6), vec3(0.5, 0.5, 1.0), sin(iTime/10.0)*0.5+0.5),1.-march.y/50.0);
+    fragColor = vec4(col,1.0);
+}
+// --------[ Original ShaderToy ends here ]---------- //
+
+void main(void)
+{
+    mainImage(gl_FragColor, gl_FragCoord.xy);
+}
+
+// -------------------------------------------------------------------------------------------------------------------
+
+</script>
+<script src="three.min.js"></script>
+<script src="main.js"></script>
+
+</body>
+
+<!-- Mirrored from digitonaut.com/art/web_grid/ by HTTrack Website Copier/3.x [XR&CO'2014], Thu, 16 Feb 2023 12:58:22 GMT -->
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" >
+
+<!-- Mirrored from digitonaut.com/art/winter_forest/ by HTTrack Website Copier/3.x [XR&CO'2014], Thu, 16 Feb 2023 12:58:52 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=UTF-8" /><!-- /Added by HTTrack -->
+<head>
+<meta charset='utf-8'\>
+<meta name='apple-mobile-web-app-capable' content='yes'><meta name='apple-mobile-web-app-status-bar-style' content='black-translucent'><title>Winter Forest</title>
+
+<style>
+canvas {
+	position:fixed;
+	left:50%; top:50%;
+	transform:translate(-50%,-50%);
+	border:0px; outline:0px;
+}
+</style>
+</head>
+<body style='margin:0px;overflow:hidden;background:#000;'>
+
+<script type="application/processing">
+// From a tutorial here: https://g-e-n-a-r-t.com/en/post.php?p=10
+// All credit goes to the author above
+// Mouse click for more trees.
+// random, cos, sin, map, recursion, sq, sqrt, translate 
+// rotate, pushMatrix, popMatrix, ellipse, line, tree
+
+boolean  isDrawing = false;
+int numTrees = 0;
+
+void setup() {
+ // size(1400, 750);
+
+	size(screenWidth,screenHeight);
+  smooth();
+  drawBG();
+}
+
+void draw() {
+  if (isDrawing == false && numTrees <= 70) {
+    numTrees++;
+    float sze = random(50, 250);
+    branch(random(-50, width+50), height+5, -PI/2, sze, sze/10, 0);
+  }
+}
+
+void branch(float startX, float startY, float ang, float len, float wt, float col) {
+  isDrawing = true;
+  float  numSegs = 0;
+  if (len > 50) numSegs = 10;
+  else if (len > 30 && len <= 50) numSegs = 5;
+  else if (len <= 30) numSegs = 1;
+  float segLen = len / numSegs;
+  float nextSegWt = wt * 0.6;
+
+  col += 10 ;
+
+  // divide each branch into  articulated (zig-zag) segments
+  for (int i = 0; i < numSegs; i++) {
+    float varyAng = random(-PI/2, PI/2) * 0.05;
+    float varySegLen = random(0.5, 1.5);
+    float endX = startX + cos(ang + varyAng) * (segLen *  varySegLen);
+    float endY = startY + sin(ang + varyAng) * (segLen *  varySegLen);
+    float segWeight = map(i, 0, numSegs, wt, nextSegWt);// slightly smaller as segs are added
+
+    drawBranchSeg(startX, startY, endX, endY, segWeight, col);
+
+    startX = endX;
+    startY = endY;
+  }
+
+  if (len > 10) { 
+    len = len * .66;
+
+    if (len > 30) {
+      branch(startX, startY, ang + random(-PI/6, 0), len, nextSegWt, col);
+      branch(startX, startY, ang + random(PI/6), len, nextSegWt, col);
+    } else if (len <= 30) {
+      int numBranches = (int)random(2, 4);
+      for (int i = 0; i < numBranches; i++) {
+        float newAng = ang + random(-PI/4, PI/4);
+        branch(startX, startY, newAng, len, nextSegWt, col);
+      }
+    }
+  }
+  isDrawing = false;
+}
+
+void drawBranchSeg(float startX, float startY, float  endX, float endY, float wt, float col) {
+
+  float len = sqrt(sq(endX - startX) + sq(endY-startY));
+
+  if (wt < 3) {
+    strokeWeight(wt);
+    stroke(col+((180-col)/2), 200);
+    line(startX, startY, endX, endY);
+  } else if (wt >= 3) {
+    pushMatrix();
+    translate(startX, startY);
+    rotate(-PI/2 + atan2(endY-startY, endX-startX));
+
+    float incr = (220 - col)/wt; 
+    for (int i = 0; i <= wt; i++) {
+      float x1 = -wt/2 + i ;
+      float y1 = 0;
+      float x2 = -wt/2 + i;
+      float y2 =  len;
+      stroke(col + i * incr);
+      strokeWeight(1);
+      line(x1, y1, x2, y2);
+    }
+
+    // bark imperfections
+    noStroke();
+    fill(0);
+    for (int j = 0; j < wt* 2; j++) {                              
+      float x = random(-((wt/2)-(wt/20)), (wt/2)-(wt/20));
+      float y = random(len);
+      if (random(1) < 0.2) {                                                             
+        ellipse(x, y, wt * random( 0.1, 0.15), wt * random(0.1, 0.15));
+      } else {
+        ellipse(x, y, wt * random(0.005, 0.1), wt * random (0.005, 0.1));
+      }
+    }
+    popMatrix();
+  }
+}
+
+
+void drawBG() {
+  color c1 = color(80,190,255);
+  color c2 = color(80,160,250);
+  noFill();
+  for (float i = 0; i < height; ++i) {
+    stroke(lerpColor(c1, c2,0));
+    rect(0, i, width, 1);
+  }
+}
+
+void mousePressed() {
+  drawBG();
+  numTrees = 0;
+  redraw();
+}
+
+</script>
+
+<canvas> </canvas>
+<script src='processing.min.js'></script>
+</body>
+
+<!-- Mirrored from digitonaut.com/art/winter_forest/ by HTTrack Website Copier/3.x [XR&CO'2014], Thu, 16 Feb 2023 12:58:54 GMT -->
+</html>
